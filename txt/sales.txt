@@ -1,0 +1,70 @@
+# -------------------------------
+# 1. IMPORT LIBRARIES
+# -------------------------------
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
+
+# -------------------------------
+# 2. LOAD DATASET
+# -------------------------------
+df = pd.read_csv("sales_data_sample.csv", encoding='ISO-8859-1') 
+print(df.head())
+print(df.info())
+
+# -------------------------------
+# 3. PREPROCESSING
+# -------------------------------
+# Drop non-numeric columns for clustering (if any)
+numeric_data = df.select_dtypes(include=['float64', 'int64'])
+
+# Normalize the data
+scaler = StandardScaler()
+scaled_data = scaler.fit_transform(numeric_data)
+
+# -------------------------------
+# 4. FIND OPTIMAL NUMBER OF CLUSTERS (ELBOW METHOD)
+# -------------------------------
+wcss = []
+for k in range(1, 11):
+    kmeans = KMeans(n_clusters=k, random_state=42)
+    kmeans.fit(scaled_data)
+    wcss.append(kmeans.inertia_)
+
+# Plot WCSS vs number of clusters
+plt.figure(figsize=(8,5))
+plt.plot(range(1, 11), wcss, marker='o')
+plt.xlabel("Number of clusters (k)")
+plt.ylabel("WCSS (Within-cluster sum of squares)")
+plt.title("Elbow Method for Optimal k")
+plt.show()
+
+# -------------------------------
+# 5. APPLY K-MEANS WITH CHOSEN k
+# -------------------------------
+optimal_k = 4  # Suppose from elbow method we choose k=4
+kmeans = KMeans(n_clusters=optimal_k, random_state=42)
+clusters = kmeans.fit_predict(scaled_data)
+
+# Add cluster labels to dataframe
+df['KMeans_Cluster'] = clusters
+print(df.head())
+
+# -------------------------------
+# 6. HIERARCHICAL CLUSTERING (OPTIONAL)
+# -------------------------------
+linked = linkage(scaled_data, method='ward')
+
+plt.figure(figsize=(10, 7))
+dendrogram(linked, orientation='top', distance_sort='descending', show_leaf_counts=False)
+plt.title("Dendrogram - Hierarchical Clustering")
+plt.xlabel("Samples")
+plt.ylabel("Euclidean Distance")
+plt.show()
+
+# Assign clusters using hierarchical clustering
+hier_clusters = fcluster(linked, t=4, criterion='maxclust')
+df['Hierarchical_Cluster'] = hier_clusters
+print(df.head())

@@ -1,0 +1,66 @@
+# -------------------------------
+# 1. IMPORT LIBRARIES
+# -------------------------------
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score
+
+# -------------------------------
+# 2. LOAD DATASET
+# -------------------------------
+df = pd.read_csv("diabetes.csv")  # make sure file is in current directory
+print(df.head())
+print(df.info())
+
+# -------------------------------
+# 3. DEFINE FEATURES AND TARGET
+# -------------------------------
+X = df.drop("Outcome", axis=1)  # Features
+y = df["Outcome"]               # Target (0 = no diabetes, 1 = diabetes)
+
+# Split data into train and test sets
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# -------------------------------
+# 4. NORMALIZE FEATURES
+# -------------------------------
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# -------------------------------
+# 5. K-NEAREST NEIGHBORS MODEL
+# -------------------------------
+knn = KNeighborsClassifier(n_neighbors=5)  # You can try other values of k
+knn.fit(X_train, y_train)
+
+# Predict on test set
+y_pred = knn.predict(X_test)
+
+# -------------------------------
+# 6. MODEL EVALUATION
+# -------------------------------
+
+# Confusion Matrix
+cm = confusion_matrix(y_test, y_pred)
+print("Confusion Matrix:\n", cm)
+
+# Accuracy
+accuracy = accuracy_score(y_test, y_pred)
+print("Accuracy:", accuracy)
+
+# Error Rate
+error_rate = 1 - accuracy
+print("Error Rate:", error_rate)
+
+# Precision
+precision = precision_score(y_test, y_pred)
+print("Precision:", precision)
+
+# Recall
+recall = recall_score(y_test, y_pred)
+print("Recall:", recall)

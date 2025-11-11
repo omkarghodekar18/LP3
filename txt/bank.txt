@@ -1,0 +1,89 @@
+# -------------------------------
+# 1. IMPORT LIBRARIES
+# -------------------------------
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.metrics import accuracy_score, confusion_matrix
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# -------------------------------
+# 2. LOAD DATASET
+# -------------------------------
+df = pd.read_csv("Churn_Modelling.csv")  # make sure file is in current directory
+print(df.head())
+
+# -------------------------------
+# 3. PREPROCESSING
+# -------------------------------
+
+# Drop unnecessary columns
+df = df.drop(['RowNumber', 'CustomerId', 'Surname'], axis=1)
+
+# Encode categorical features
+# Gender
+df['Gender'] = LabelEncoder().fit_transform(df['Gender'])
+
+# Geography (one-hot encoding)
+df = pd.get_dummies(df, columns=['Geography'], drop_first=True)
+
+# Feature and target sets
+X = df.drop('Exited', axis=1)
+y = df['Exited']
+
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# Normalize features
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# -------------------------------
+# 4. BUILD NEURAL NETWORK MODEL
+# -------------------------------
+model = Sequential()
+
+# Input layer + first hidden layer
+model.add(Dense(units=16, activation='relu', input_dim=X_train.shape[1]))
+model.add(Dropout(0.2))  # helps prevent overfitting
+
+# Second hidden layer
+model.add(Dense(units=16, activation='relu'))
+model.add(Dropout(0.2))
+
+# Output layer
+model.add(Dense(units=1, activation='sigmoid'))  # binary classification
+
+# Compile the model
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+# Train the model
+history = model.fit(X_train, y_train, validation_split=0.2, epochs=50, batch_size=32, verbose=1)
+
+# -------------------------------
+# 5. MODEL EVALUATION
+# -------------------------------
+
+# Predict on test data
+y_pred_prob = model.predict(X_test)
+y_pred = (y_pred_prob > 0.5).astype(int)
+
+# Accuracy
+accuracy = accuracy_score(y_test, y_pred)
+print("\nAccuracy on test data:", accuracy)
+
+# Confusion Matrix
+cm = confusion_matrix(y_test, y_pred)
+sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.title("Confusion Matrix")
+plt.show()
